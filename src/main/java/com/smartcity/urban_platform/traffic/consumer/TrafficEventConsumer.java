@@ -1,5 +1,6 @@
 package com.smartcity.urban_platform.traffic.consumer;
 
+import com.smartcity.urban_platform.notification.TelegramNotificationService;
 import com.smartcity.urban_platform.traffic.entity.TrafficEventEntity;
 import com.smartcity.urban_platform.traffic.model.TrafficSensorEvent;
 import com.smartcity.urban_platform.traffic.repository.TrafficEventRepository;
@@ -10,7 +11,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * Escucha el topic de tráfico en Kafka, procesa cada evento,
- * evalúa el estado de la zona y lo guarda en PostgreSQL.
+ * evalúa el estado de la zona, lo guarda en PostgreSQL
+ * y envía alertas a Telegram cuando hay situaciones críticas.
  */
 @Service
 public class TrafficEventConsumer {
@@ -18,9 +20,14 @@ public class TrafficEventConsumer {
     private static final Logger log = LoggerFactory.getLogger(TrafficEventConsumer.class);
 
     private final TrafficEventRepository repository;
+    private final TelegramNotificationService telegram;
 
-    public TrafficEventConsumer(TrafficEventRepository repository) {
+    public TrafficEventConsumer(
+            TrafficEventRepository repository,
+            TelegramNotificationService telegram
+    ) {
         this.repository = repository;
+        this.telegram = telegram;
     }
 
     @KafkaListener(
@@ -31,7 +38,6 @@ public class TrafficEventConsumer {
 
         ZoneStatus status = evaluateStatus(event.congestionIndex());
 
-        // Guardar en PostgreSQL
         TrafficEventEntity entity = new TrafficEventEntity(
                 event.eventId(),
                 event.zoneId(),
@@ -53,10 +59,12 @@ public class TrafficEventConsumer {
                 status
         );
 
+        // Enviar alerta a Telegram si la zona es crítica
         if (status == ZoneStatus.CRITICO) {
-            log.warn(
-                    "ALERTA CRÍTICA → zona={} con congestion={}",
+            log.warn("ALERTA CRÍTICA → zona={}", event.zoneId());
+            telegram.sendZoneCriticalAlert(
                     event.zoneId(),
+                    "TRÁFICO",
                     event.congestionIndex()
             );
         }

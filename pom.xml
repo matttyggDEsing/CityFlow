@@ -59,7 +59,18 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Para leer el archivo .env automáticamente -->
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>spring-dotenv</artifactId>
+			<version>4.0.0</version>
+		</dependency>
 
+		<!-- Para hacer llamadas HTTP a la API de Telegram -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
 		<!-- Flyway: gestiona la creación automática de tablas en la base de datos -->
 		<dependency>
 			<groupId>org.flywaydb</groupId>
